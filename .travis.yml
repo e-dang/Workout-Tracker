@@ -1,0 +1,17 @@
+sudo: required
+os: linux
+services:
+  - docker
+language: python
+python: "3.8.3"
+
+script:
+  - docker-compose -f .travis/docker-compose.yml -p workout_tracker up -d
+  - docker ps -a
+  - docker exec -it workout_tracker bash -c "cd workout_tracker && python manage.py makemigrations && python manage.py migrate && pytest -v"
+
+deploy:
+  - provider: script
+    script: bash ./.travis/upload_dockerhub.sh
+    on:
+      all_branches: true
