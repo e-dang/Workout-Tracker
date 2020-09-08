@@ -1,0 +1,26 @@
+version: "3.4"
+services:
+  app:
+    container_name: workout_tracker
+    restart: always
+    build:
+      context: ..
+      target: test
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - SECRET_KEY
+    ports:
+      - 8000:8000
+    links:
+      - postgres
+    tty: true
+  postgres:
+    container_name: postgres
+    image: postgres:12.3
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
