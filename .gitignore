@@ -131,3 +131,4 @@ dmypy.json
 postgres_db*
 .devcontainer/docker-compose.extend.yml
 .vscode
+migrations/
