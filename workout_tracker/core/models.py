@@ -16,11 +16,14 @@ class MultiAliasResource(models.Model):
         abstract = True
 
     def __str__(self):
-        return self.name
+        return self.name.capitalize()
 
     def __repr__(self):
-        return '\n\t'.join([f'Name: {self.name}'] + self.snames)
+        return '\n\t'.join([f'Name: {self.__str__()}'] + self._capitalize_snames())
 
     @property
     def aliases(self):
-        return [self.name] + self.snames
+        return [self.__str__()] + self._capitalize_snames()
+
+    def _capitalize_snames(self):
+        return [name.capitalize() for name in self.snames]
