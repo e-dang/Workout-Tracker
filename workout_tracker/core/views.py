@@ -1,3 +1,10 @@
-from django.shortcuts import render
+from rest_framework.viewsets import GenericViewSet
+from rest_framework import mixins
 
-# Create your views here.
+
+class ListRetrieveUpdateDeleteViewSet(mixins.ListModelMixin,
+                                      mixins.RetrieveModelMixin,
+                                      mixins.UpdateModelMixin,
+                                      mixins.DestroyModelMixin,
+                                      GenericViewSet):
+    pass
