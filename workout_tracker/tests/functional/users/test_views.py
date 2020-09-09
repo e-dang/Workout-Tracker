@@ -3,6 +3,7 @@ from rest_framework.reverse import reverse
 
 from users.models import User
 from users.serializers import UserSerializer
+from tests.utils import get_resp_data
 
 
 @pytest.mark.parametrize('get_client_user, status_code', [
@@ -22,10 +23,11 @@ def test_user_list(get_client_user, status_code):
 
     assert resp.status_code == status_code
     if status_code == 200:
-        assert len(resp.data) == User.objects.all().count()
-        assert len(UserSerializer.Meta.fields) == len(resp.data[0])
+        data = get_resp_data(resp)
+        assert len(data) == User.objects.all().count()
+        assert len(UserSerializer.Meta.fields) == len(data[0])
         for field in UserSerializer.Meta.fields:
-            assert field in resp.data[0]
+            assert field in data[0]
 
 
 @pytest.mark.parametrize('get_client_user, status_code', [

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.conf import settings
 
 
 class MultiAliasResource(models.Model):
@@ -11,6 +12,7 @@ class MultiAliasResource(models.Model):
     """
     name = models.CharField(max_length=100)
     snames = ArrayField(models.CharField(max_length=100))
+    created = models.DateField(auto_now_add=True)
 
     class Meta:
         abstract = True
@@ -27,3 +29,11 @@ class MultiAliasResource(models.Model):
 
     def _capitalize_snames(self):
         return [name.capitalize() for name in self.snames]
+
+
+class OwnedMultiAliasResource(MultiAliasResource):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='%(class)s',
+                              related_query_name='%(class)s', on_delete=models.CASCADE)
+
+    class Meta:
+        abstract = True
