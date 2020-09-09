@@ -12,6 +12,9 @@ def faker_seed():
 
 
 register(factories.UserFactory)
+register(factories.MuscleSubportionFactory)
+register(factories.MuscleFactory)
+register(factories.MuscleGroupingFactory)
 
 
 @pytest.fixture
@@ -127,6 +130,8 @@ def _sort_key(item):
     for mark in item.own_markers:
         if mark.name in names:
             return key_dict[mark.name]
+
+    return 0
 
 
 def pytest_collection_modifyitems(items):
