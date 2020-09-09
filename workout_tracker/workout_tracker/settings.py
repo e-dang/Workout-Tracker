@@ -139,3 +139,4 @@ STATIC_URL = '/static/'
 SITE_ID = 1
 AUTH_USER_MODEL = 'users.User'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+OLD_PASSWORD_FIELD_ENABLED = True
