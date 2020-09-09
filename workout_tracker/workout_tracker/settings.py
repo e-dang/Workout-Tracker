@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'rest_auth',
     'rest_auth.registration',
     'users',
-    'muscles'
+    'muscles',
+    'equipment'
 ]
 
 MIDDLEWARE = [
