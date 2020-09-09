@@ -1,4 +1,39 @@
 import pytest
+from pytest_factoryboy import register
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
+
+from . import factories
+
+
+@pytest.fixture(scope='session')
+def faker_seed():
+    return 12345
+
+
+register(factories.UserFactory)
+
+
+@pytest.fixture
+def api_client():
+    return APIClient()
+
+
+@pytest.fixture
+def test_password():
+    return factories.TEST_PASSWORD
+
+
+@pytest.fixture
+def auto_login_user(db, api_client, user_factory):
+    def make_auto_login(user=None, **kwargs):
+        if user is None:
+            user = user_factory(**kwargs)
+        token, _ = Token.objects.get_or_create(user=user)
+        api_client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        return api_client, user
+
+    return make_auto_login
 
 
 def _get_test_type(item):
