@@ -1,3 +1,7 @@
-from django.db import models
+from core.models import OwnedMultiAliasResource
 
-# Create your models here.
+
+class Equipment(OwnedMultiAliasResource):
+    class Meta:
+        unique_together = ['name', 'owner']
+        verbose_name_plural = 'equipment'
