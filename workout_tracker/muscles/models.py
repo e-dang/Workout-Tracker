@@ -4,6 +4,7 @@ from django.db import models
 
 class AbstractMuscle(MultiAliasResource):
     name = models.CharField(max_length=100, primary_key=True)
+    created = None
 
     class Meta:
         abstract = True
