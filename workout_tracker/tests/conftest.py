@@ -36,6 +36,72 @@ def auto_login_user(db, api_client, user_factory):
     return make_auto_login
 
 
+def _remove_admin_settings(kwargs):
+    kwargs.pop('is_active', None)
+    kwargs.pop('active', None)
+    kwargs.pop('admin', None)
+    kwargs.pop('superuser', None)
+    kwargs.pop('is_active', None)
+    kwargs.pop('is_staff', None)
+    kwargs.pop('is_superuser', None)
+
+
+@pytest.fixture
+def client_logged_in_active_user(db, auto_login_user, user_factory):
+    def _inner(*args, num_add_users=0, **kwargs):
+        _remove_admin_settings(kwargs)
+        user_factory.create_batch(num_add_users)
+        return auto_login_user(*args, **kwargs)
+    return _inner
+
+
+@pytest.fixture
+def client_logged_in_inactive_user(db, auto_login_user, user_factory):
+    def _inner(*args, num_add_users=0, **kwargs):
+        _remove_admin_settings(kwargs)
+        user_factory.create_batch(num_add_users)
+        return auto_login_user(*args, inactive=True, **kwargs)
+    return _inner
+
+
+@pytest.fixture
+def client_logged_in_admin_user(db, auto_login_user, user_factory):
+    def _inner(*args, num_add_users=0, **kwargs):
+        _remove_admin_settings(kwargs)
+        user_factory.create_batch(num_add_users)
+        return auto_login_user(*args, admin=True, **kwargs)
+    return _inner
+
+
+@pytest.fixture
+def client_logged_in_superuser(db, auto_login_user, user_factory):
+    def _inner(*args, num_add_users=0, **kwargs):
+        _remove_admin_settings(kwargs)
+        user_factory.create_batch(num_add_users)
+        return auto_login_user(superuser=True)
+    return _inner
+
+
+@pytest.fixture
+def client_logged_in_wrong_user(db, auto_login_user, user_factory):
+    def _inner(*args, num_add_users=0, **kwargs):
+        user_factory.create_batch(num_add_users)
+        _, user = auto_login_user(*args, **kwargs)
+        api_client, _ = auto_login_user()
+        return api_client, user
+    return _inner
+
+
+@pytest.fixture
+def client_logged_out_user(db, auto_login_user, user_factory):
+    def _inner(*args, num_add_users=0, **kwargs):
+        user_factory.create_batch(num_add_users)
+        api_client, user = auto_login_user(*args, **kwargs)
+        api_client.credentials()
+        return api_client, user
+    return _inner
+
+
 def _get_test_type(item):
     """
     Gets the test type - unit, functional, integration, based on the directory that the test is in.
