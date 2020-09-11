@@ -7,19 +7,19 @@ from rest_framework.generics import ListCreateAPIView
 from core.permissions import IsAdmin, IsOwner
 from core.views import ListRetrieveUpdateDestroyViewSet
 
-from .filters import EquipmentFilterSet
-from .models import Equipment
-from .serializers import EquipmentSerializer
+from .filters import MovementFilter
+from .models import Movement
+from .serializers import MovementSerializer
 
 
-class EquipmentViewSet(ListRetrieveUpdateDestroyViewSet):
-    queryset = Equipment.objects.all()
-    serializer_class = EquipmentSerializer
+class MovementViewSet(ListRetrieveUpdateDestroyViewSet):
+    queryset = Movement.objects.all()
+    serializer_class = MovementSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = EquipmentFilterSet
-    search_fields = ['owner', 'name', 'snames', 'created']
-    ordering_fields = ['owner', 'name', 'created']
-    ordering = ['owner', 'name']
+    filterset_class = MovementFilter
+    search_fields = ['name', 'snames', 'created']
+    ordering_fields = ['owner__username', 'name', 'created']
+    ordering = ['owner__username', 'name']
 
     def get_permissions(self):
         if self.action == 'list':
@@ -30,17 +30,17 @@ class EquipmentViewSet(ListRetrieveUpdateDestroyViewSet):
         return [permission() for permission in permission_classes]
 
 
-class UserEquipmentListCreateView(ListCreateAPIView):
-    serializer_class = EquipmentSerializer
+class UserMovementListCreateView(ListCreateAPIView):
+    serializer_class = MovementSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = EquipmentFilterSet
+    filterset_class = MovementFilter
     search_fields = ['name', 'snames', 'created']
     ordering_fields = ['name', 'created']
     ordering = ['name']
     permission_classes = [IsAdmin | IsOwner]
 
     def get_queryset(self):
-        return Equipment.objects.filter(owner=self.kwargs['pk'])
+        return Movement.objects.filter(owner=self.kwargs['pk'])
 
     def perform_create(self, serializer):
         owner_model = ContentType.objects.get(model=settings.AUTH_USER_MODEL).model_class()

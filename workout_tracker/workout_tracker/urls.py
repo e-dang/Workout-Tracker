@@ -23,7 +23,8 @@ extra_patterns = [
     path('auth/', include('auth.urls')),
     path('users/', include('users.urls')),
     path('muscles/', include('muscles.urls')),
-    path('equipment/', include('equipment.urls'))
+    path('equipment/', include('equipment.urls')),
+    path('movements/', include('movements.urls'))
 ]
 
 urlpatterns = [
