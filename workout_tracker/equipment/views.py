@@ -7,7 +7,7 @@ from rest_framework.generics import ListCreateAPIView
 from core.permissions import IsAdmin, IsOwner
 from core.views import ListRetrieveUpdateDeleteViewSet
 
-from .filters import EquipmentFilter
+from .filters import EquipmentFilterSet
 from .models import Equipment
 from .serializers import EquipmentSerializer
 
@@ -16,7 +16,7 @@ class EquipmentViewSet(ListRetrieveUpdateDeleteViewSet):
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = EquipmentFilter
+    filterset_class = EquipmentFilterSet
     search_fields = ['owner', 'name', 'snames', 'created']
     ordering_fields = ['owner', 'name', 'created']
     ordering = ['owner', 'name']
@@ -33,10 +33,10 @@ class EquipmentViewSet(ListRetrieveUpdateDeleteViewSet):
 class UserEquipmentListCreateView(ListCreateAPIView):
     serializer_class = EquipmentSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = EquipmentFilter
-    search_fields = ['owner', 'name', 'snames', 'created']
-    ordering_fields = ['owner', 'name', 'created']
-    ordering = ['owner', 'name']
+    filterset_class = EquipmentFilterSet
+    search_fields = ['name', 'snames', 'created']
+    ordering_fields = ['name', 'created']
+    ordering = ['name']
     permission_classes = [IsAdmin | IsOwner]
 
     def get_queryset(self):
