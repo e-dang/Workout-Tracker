@@ -5,14 +5,14 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import ListCreateAPIView
 
 from core.permissions import IsAdmin, IsOwner
-from core.views import ListRetrieveUpdateDeleteViewSet
+from core.views import ListRetrieveUpdateDestroyViewSet
 
 from .filters import EquipmentFilterSet
 from .models import Equipment
 from .serializers import EquipmentSerializer
 
 
-class EquipmentViewSet(ListRetrieveUpdateDeleteViewSet):
+class EquipmentViewSet(ListRetrieveUpdateDestroyViewSet):
     queryset = Equipment.objects.all()
     serializer_class = EquipmentSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
