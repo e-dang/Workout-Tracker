@@ -5,6 +5,7 @@ from django.db.models.signals import post_save, pre_delete
 from users.models import User
 from muscles.models import MuscleSubportion, Muscle, MuscleGrouping
 from equipment.models import Equipment
+from movements.models import Movement
 
 TEST_PASSWORD = 'strong-test-pass123'
 
@@ -57,7 +58,16 @@ class UserFactory(factory.django.DjangoModelFactory):
 
         if counts:
             for _ in range(counts):
-                self.equipment.add(EquipmentFactory())
+                self.equipments.add(EquipmentFactory())
+
+    @factory.post_generation
+    def movements(self, create, counts, **kwargs):
+        if not create:
+            return
+
+        if counts:
+            for _ in range(counts):
+                self.movements.add(MovementFactory())
 
 
 @factory.django.mute_signals(post_save)
@@ -134,6 +144,26 @@ class EquipmentFactory(factory.django.DjangoModelFactory):
         model = 'equipment.Equipment'
 
 
+class MovementFactory(factory.django.DjangoModelFactory):
+    owner = factory.SubFactory(UserFactory)
+    name = factory.Sequence(lambda x: f'bench press{x}')
+    snames = factory.Sequence(lambda x: [f'benchpress{x}', f'Benchpress{x}'])
+    equipment = factory.SubFactory(EquipmentFactory)
+    description = factory.Faker('text')
+
+    class Meta:
+        model = 'movements.Movement'
+
+    @factory.post_generation
+    def muscles(self, create, counts, **kwargs):
+        if not create:
+            return
+
+        if counts:
+            for _ in range(counts):
+                self.muscles.add(MuscleGroupingFactory())
+
+
 @pytest.mark.django_db
 def test_user_factory(user_factory):
     user = user_factory()
@@ -196,7 +226,37 @@ def test_user_factory_with_equipment(user_factory):
     num_equipment = 5
     user = user_factory(equipment=num_equipment)
 
-    user_equipment = user.equipment.all()
+    user_equipment = user.equipments.all()
     assert user_equipment.count() == num_equipment
     for equipment in user_equipment:
         assert equipment.owner == user
+
+
+@pytest.mark.parametrize('movement_factory, num_muscles', [
+    (None, 0),
+    (None, 1)
+],
+    indirect=['movement_factory'],
+    ids=['zero_muscles', 'one_muscle'])
+@pytest.mark.django_db
+def test_movement_factory(movement_factory, num_muscles):
+    movement = movement_factory(muscles=num_muscles)
+
+    count = movement.muscles.all().count()
+    assert isinstance(movement, Movement)
+    assert isinstance(movement.owner, User)
+    assert isinstance(movement.equipment, Equipment)
+    assert count == num_muscles
+    if count != 0:
+        assert isinstance(movement.muscles.last(), MuscleGrouping)
+
+
+@pytest.mark.django_db
+def test_user_factory_with_movements(user_factory):
+    num_movements = 5
+    user = user_factory(movements=num_movements)
+
+    user_movements = user.movements.all()
+    assert user_movements.count() == num_movements
+    for movement in user_movements:
+        assert movement.owner == user

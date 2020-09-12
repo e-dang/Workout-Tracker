@@ -16,6 +16,7 @@ register(factories.MuscleSubportionFactory)
 register(factories.MuscleFactory)
 register(factories.MuscleGroupingFactory)
 register(factories.EquipmentFactory)
+register(factories.MovementFactory)
 
 
 @pytest.fixture
