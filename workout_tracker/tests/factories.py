@@ -4,6 +4,7 @@ import factory
 from django.db.models.signals import post_save, pre_delete
 from users.models import User
 from muscles.models import MuscleSubportion, Muscle, MuscleGrouping
+from equipment.models import Equipment
 
 TEST_PASSWORD = 'strong-test-pass123'
 
@@ -48,6 +49,15 @@ class UserFactory(factory.django.DjangoModelFactory):
     def _create(cls, model_class, *args, **kwargs):
         manager = cls._get_manager(model_class)
         return manager.create_user(*args, **kwargs)
+
+    @factory.post_generation
+    def equipment(self, create, counts, **kwargs):
+        if not create:
+            return
+
+        if counts:
+            for _ in range(counts):
+                self.equipment.add(EquipmentFactory())
 
 
 @factory.django.mute_signals(post_save)
@@ -115,6 +125,15 @@ class MuscleSubportionFactory(factory.django.DjangoModelFactory):
         return subportion
 
 
+class EquipmentFactory(factory.django.DjangoModelFactory):
+    owner = factory.SubFactory(UserFactory)
+    name = factory.Sequence(lambda x: f'barbell{x}')
+    snames = factory.Sequence(lambda x: [f'Barbell{x}', f'bar bell{x}'])
+
+    class Meta:
+        model = 'equipment.Equipment'
+
+
 @pytest.mark.django_db
 def test_user_factory(user_factory):
     user = user_factory()
@@ -162,3 +181,22 @@ def test_muscle_grouping_factory(muscle_grouping_factory, num_muscles, expected_
     assert MuscleGrouping.objects.all().count() == expected_grouping
     assert Muscle.objects.all().count() == expected_muscle
     assert MuscleSubportion.objects.all().count() == expected_subportion
+
+
+@pytest.mark.django_db
+def test_equipment_factory(equipment_factory):
+    equipment = equipment_factory()
+
+    assert isinstance(equipment, Equipment)
+    assert isinstance(equipment.owner, User)
+
+
+@pytest.mark.django_db
+def test_user_factory_with_equipment(user_factory):
+    num_equipment = 5
+    user = user_factory(equipment=num_equipment)
+
+    user_equipment = user.equipment.all()
+    assert user_equipment.count() == num_equipment
+    for equipment in user_equipment:
+        assert equipment.owner == user
