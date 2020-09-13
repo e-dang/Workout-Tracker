@@ -1,0 +1,102 @@
+[
+    {
+        "pk": 1,
+        "model": "equipment.Equipment",
+        "fields": {
+            "name": "barbell",
+            "snames": [],
+            "owner": 1,
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "equipment.Equipment",
+        "fields": {
+            "name": "dumbbell",
+            "snames": [],
+            "owner": 1,
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "equipment.Equipment",
+        "fields": {
+            "name": "kettlebell",
+            "snames": [],
+            "owner": 1,
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "equipment.Equipment",
+        "fields": {
+            "name": "resistance band",
+            "snames": [],
+            "owner": 1,
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    },
+    {
+        "pk": 5,
+        "model": "equipment.Equipment",
+        "fields": {
+            "name": "pullup bar",
+            "snames": [],
+            "owner": 1,
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    },
+    {
+        "pk": 6,
+        "model": "equipment.Equipment",
+        "fields": {
+            "name": "bench",
+            "snames": [],
+            "owner": 1,
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    },
+    {
+        "pk": 7,
+        "model": "equipment.Equipment",
+        "fields": {
+            "name": "medicine ball",
+            "snames": [],
+            "owner": 1,
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    },
+    {
+        "pk": 8,
+        "model": "equipment.Equipment",
+        "fields": {
+            "name": "EZ bar",
+            "snames": [],
+            "owner": 1,
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    },
+    {
+        "pk": 9,
+        "model": "equipment.Equipment",
+        "fields": {
+            "name": "landmine",
+            "snames": [],
+            "owner": 1,
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    },
+    {
+        "pk": 10,
+        "model": "equipment.Equipment",
+        "fields": {
+            "name": "cable machine",
+            "snames": [],
+            "owner": 1,
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    }
+]
