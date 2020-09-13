@@ -31,11 +31,15 @@ class AbstractWorkload(UnitsModelMixin):
     def __len__(self):
         return self.sets.all().count()
 
-    def append(self, reps, weight, units=None):
-        _set = self._build_set(reps, weight, units or self.units)
+    def append(self, reps, weight, units=None, order=None):
+        _set = self._build_set(reps, weight, units or self.units, order or len(self))
         _set.change_units(self.units)
         assert _set.units == self.units
         _set.save()
+
+    def extend(self, sets):
+        for _set in sets:
+            self.append(**_set)
 
     def remove(self, idx):
         del self[idx]
@@ -54,7 +58,7 @@ class AbstractWorkload(UnitsModelMixin):
     def _create_proxy(self, idx):
         raise NotImplementedError
 
-    def _build_set(self, reps, weight, units):
+    def _build_set(self, reps, weight, units, order):
         raise NotImplementedError
 
 
@@ -72,8 +76,8 @@ class WorkloadTemplate(AbstractWorkload):
     def _create_proxy(self, idx):
         return SetTemplateProxy(self, idx)
 
-    def _build_set(self, reps, weight, units):
-        return SetTemplate(reps=reps, weight=weight, units=units, order=len(self), workload_template=self)
+    def _build_set(self, reps, weight, units, order):
+        return SetTemplate(reps=reps, weight=weight, units=units, order=order, workload_template=self)
 
 
 class Workload(AbstractWorkload):
@@ -98,8 +102,8 @@ class Workload(AbstractWorkload):
     def _create_proxy(self, idx):
         return SetProxy(self, idx)
 
-    def _build_set(self, reps, weight, units):
-        return SetTemplate(reps=reps, weight=weight, units=units, order=len(self), workload=self)
+    def _build_set(self, reps, weight, units, order):
+        return SetTemplate(reps=reps, weight=weight, units=units, order=order, workload=self)
 
 
 class WorkloadTemplateProxy:
