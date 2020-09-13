@@ -1,0 +1,21 @@
+[
+    {
+        "pk": 1,
+        "model": "movements.Movement",
+        "fields": {
+            "name": "bench press",
+            "snames": [
+                "Bench Press",
+                "benchpress"
+            ],
+            "owner": 1,
+            "equipment": 1,
+            "muscles": [
+                "chest",
+                "upper body"
+            ],
+            "description": "stuff and some more stuff",
+            "created": "2020-03-16T17:41:28+00:00"
+        }
+    }
+]
