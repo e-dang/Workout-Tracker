@@ -13,7 +13,7 @@ class MultiAliasedResourceSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class OwnedMultiAliasResourceSerializer(MultiAliasedResourceSerializer):
-    owner = UserSerializer()
+    owner = UserSerializer(read_only=True)
 
     class Meta:
         model = OwnedMultiAliasResource
