@@ -1,6 +1,7 @@
 from core.models import OwnedMultiAliasResource
 from django.db import models
 from .workloads import WorkloadTemplate, Workload, WorkloadTemplateProxy, WorkloadProxy
+from exercises.managers import ExerciseTemplateManager
 
 
 class AbstractExercise(OwnedMultiAliasResource):
@@ -23,11 +24,15 @@ class AbstractExercise(OwnedMultiAliasResource):
     def __len__(self):
         return self.workloads.all().count()
 
-    def append(self, movement, units, sets=None):
-        workload = self.workloads.create(movement=movement, units=units, order=len(self))
-        if sets:
+    def append(self, movement, units, order=None, sets=None):
+        workload = self.workloads.create(movement=movement, units=units, order=order or len(self))
+        if sets is not None:
             for _set in sets:
-                workload.append(*_set)
+                workload.append(**_set)
+
+    def extend(self, workloads):
+        for workload in workloads:
+            self.append(**workload)
 
     def remove(self, idx):
         del self[idx]
@@ -43,6 +48,8 @@ class AbstractExercise(OwnedMultiAliasResource):
 
 
 class ExerciseTemplate(AbstractExercise):
+
+    objects = ExerciseTemplateManager()
 
     def create_exercise(self):
         return Exercise.from_template(self)
