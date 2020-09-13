@@ -1,11 +1,7 @@
-import pytest
-
 import factory
 from django.db.models.signals import post_save, pre_delete
-from users.models import User
-from muscles.models import MuscleSubportion, Muscle, MuscleGrouping
-from equipment.models import Equipment
-from movements.models import Movement
+
+from exercises.models import UNITS
 
 TEST_PASSWORD = 'strong-test-pass123'
 
@@ -164,99 +160,94 @@ class MovementFactory(factory.django.DjangoModelFactory):
                 self.muscles.add(MuscleGroupingFactory())
 
 
-@pytest.mark.django_db
-def test_user_factory(user_factory):
-    user = user_factory()
+class ExerciseTemplateFactory(factory.django.DjangoModelFactory):
+    owner = factory.SubFactory(UserFactory)
+    name = factory.Sequence(lambda x: f'bench press{x}')
+    snames = factory.Sequence(lambda x: [f'benchpress{x}', f'Benchpress{x}'])
 
-    assert isinstance(user, User)
+    class Meta:
+        model = 'exercises.ExerciseTemplate'
 
+    @factory.post_generation
+    def workloads(self, create, count, **kwargs):
+        if not create:
+            return
 
-@pytest.mark.django_db
-def test_muscle_subportion_factory(muscle_subportion_factory):
-    grouping = muscle_subportion_factory()
-
-    assert isinstance(grouping, MuscleSubportion)
-    assert MuscleSubportion.objects.all().count() == 1
-    assert Muscle.objects.all().count() == 1
-    assert MuscleGrouping.objects.all().count() == 1
-
-
-@pytest.mark.parametrize('muscle_factory, num_subportions, expected_grouping, expected_muscle, expected_subportion', [
-    (None, 0, 1, 1, 0),
-    (None, 1, 2, 2, 1),
-    (None, 2, 3, 3, 2)
-], indirect=['muscle_factory'])
-@pytest.mark.django_db
-def test_muscle_factory(muscle_factory, num_subportions, expected_grouping, expected_muscle, expected_subportion):
-    muscle = muscle_factory(subportions=num_subportions)
-
-    assert isinstance(muscle, Muscle)
-    assert muscle.subportions.all().count() == num_subportions
-    assert Muscle.objects.all().count() == expected_muscle
-    assert MuscleGrouping.objects.all().count() == expected_grouping
-    assert MuscleSubportion.objects.all().count() == expected_subportion
+        if count:
+            for _ in range(count):
+                WorkloadTemplateFactory(exercise_template=self, movement=MovementFactory(), **kwargs)
 
 
-@pytest.mark.parametrize('muscle_grouping_factory, num_muscles, expected_grouping, expected_muscle, expected_subportion', [
-    (None, 0, 1, 0, 0),
-    (None, 1, 3, 2, 1),
-    (None, 2, 5, 4, 2)
-], indirect=['muscle_grouping_factory'])
-@pytest.mark.django_db
-def test_muscle_grouping_factory(muscle_grouping_factory, num_muscles, expected_grouping, expected_muscle, expected_subportion):
-    grouping = muscle_grouping_factory(muscles=num_muscles)
+class ExerciseFactory(factory.django.DjangoModelFactory):
+    owner = factory.SubFactory(UserFactory)
+    name = factory.Sequence(lambda x: f'bench press{x}')
+    snames = factory.Sequence(lambda x: [f'benchpress{x}', f'Benchpress{x}'])
 
-    assert isinstance(grouping, MuscleGrouping)
-    assert grouping.muscles.all().count() == num_muscles
-    assert MuscleGrouping.objects.all().count() == expected_grouping
-    assert Muscle.objects.all().count() == expected_muscle
-    assert MuscleSubportion.objects.all().count() == expected_subportion
+    class Meta:
+        model = 'exercises.Exercise'
 
+    @factory.post_generation
+    def workloads(self, create, count, **kwargs):
+        if not create:
+            return
 
-@pytest.mark.django_db
-def test_equipment_factory(equipment_factory):
-    equipment = equipment_factory()
-
-    assert isinstance(equipment, Equipment)
-    assert isinstance(equipment.owner, User)
+        if count:
+            for _ in range(count):
+                WorkloadFactory(exercise=self, movement=MovementFactory(), **kwargs)
 
 
-@pytest.mark.django_db
-def test_user_factory_with_equipment(user_factory):
-    num_equipment = 5
-    user = user_factory(equipment=num_equipment)
+class WorkloadTemplateFactory(factory.django.DjangoModelFactory):
+    movement = factory.SubFactory(MovementFactory)
+    exercise_template = factory.SubFactory(ExerciseTemplateFactory)
+    units = factory.Iterator(UNITS)
 
-    user_equipment = user.equipments.all()
-    assert user_equipment.count() == num_equipment
-    for equipment in user_equipment:
-        assert equipment.owner == user
+    class Meta:
+        model = 'exercises.WorkloadTemplate'
 
+    @factory.post_generation
+    def sets(self, create, count, **kwargs):
+        if not create:
+            return
 
-@pytest.mark.parametrize('movement_factory, num_muscles', [
-    (None, 0),
-    (None, 1)
-],
-    indirect=['movement_factory'],
-    ids=['zero_muscles', 'one_muscle'])
-@pytest.mark.django_db
-def test_movement_factory(movement_factory, num_muscles):
-    movement = movement_factory(muscles=num_muscles)
-
-    count = movement.muscles.all().count()
-    assert isinstance(movement, Movement)
-    assert isinstance(movement.owner, User)
-    assert isinstance(movement.equipment, Equipment)
-    assert count == num_muscles
-    if count != 0:
-        assert isinstance(movement.muscles.last(), MuscleGrouping)
+        if count:
+            for _ in range(count):
+                SetTemplateFactory.create(workload_template=self)
 
 
-@pytest.mark.django_db
-def test_user_factory_with_movements(user_factory):
-    num_movements = 5
-    user = user_factory(movements=num_movements)
+class WorkloadFactory(factory.django.DjangoModelFactory):
+    movement = factory.SubFactory(MovementFactory)
+    exercise = factory.SubFactory(ExerciseFactory)
+    units = factory.Iterator(UNITS)
 
-    user_movements = user.movements.all()
-    assert user_movements.count() == num_movements
-    for movement in user_movements:
-        assert movement.owner == user
+    class Meta:
+        model = 'exercises.Workload'
+
+    @factory.post_generation
+    def sets(self, create, count, **kwargs):
+        if not create:
+            return
+
+        if count:
+            for _ in range(count):
+                SetFactory.create(workload=self)
+
+
+class AbstractSetFactory(factory.django.DjangoModelFactory):
+    reps = factory.Faker('pyint', min_value=0, max_value=50)
+    weight = factory.Faker('pyfloat', min_value=0, max_value=1000)
+
+
+class SetTemplateFactory(AbstractSetFactory):
+    workload_template = factory.SubFactory(WorkloadTemplateFactory)
+    units = factory.LazyAttribute(lambda o: o.workload_template.units)
+
+    class Meta:
+        model = 'exercises.SetTemplate'
+
+
+class SetFactory(AbstractSetFactory):
+    workload = factory.SubFactory(WorkloadFactory)
+    units = factory.LazyAttribute(lambda o: o.workload.units)
+
+    class Meta:
+        model = 'exercises.Set'
