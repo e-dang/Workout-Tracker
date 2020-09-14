@@ -1,7 +1,9 @@
-from core.models import OwnedMultiAliasResource
 from django.db import models
-from .workloads import WorkloadTemplate, Workload, WorkloadTemplateProxy, WorkloadProxy
+
+from core.models import OwnedMultiAliasResource
 from exercises.managers import ExerciseTemplateManager
+
+from .workloads import Workload, WorkloadTemplate
 
 
 class AbstractExercise(OwnedMultiAliasResource):
@@ -12,10 +14,12 @@ class AbstractExercise(OwnedMultiAliasResource):
         return '\n'.join([str(self)] + [str(workload) for workload in self.workloads.all()])
 
     def __getitem__(self, idx):
-        return self._create_proxy(self._get(idx))
+        if (workload := self.get(idx)) is None:
+            raise KeyError('Index out of range.')
+        return workload
 
     def __delitem__(self, idx):
-        workload = self._get(idx)
+        workload = self[idx]
 
         # fix ordering of workloads such that they all are adjacent to each other
         self.workloads.filter(order__gt=workload.order).update(order=models.F('order') - 1)
@@ -24,11 +28,14 @@ class AbstractExercise(OwnedMultiAliasResource):
     def __len__(self):
         return self.workloads.all().count()
 
+    def get(self, idx, default=None):
+        try:
+            return self.workloads.get(order=idx)
+        except (WorkloadTemplate.DoesNotExist, Workload.DoesNotExist):
+            return default
+
     def append(self, movement, units, order=None, sets=None):
-        workload = self.workloads.create(movement=movement, units=units, order=order or len(self))
-        if sets is not None:
-            for _set in sets:
-                workload.append(**_set)
+        return self.workloads.create(movement=movement, units=units, order=order or len(self), sets=sets)
 
     def extend(self, workloads):
         for workload in workloads:
@@ -37,14 +44,11 @@ class AbstractExercise(OwnedMultiAliasResource):
     def remove(self, idx):
         del self[idx]
 
-    def _get(self, idx):
-        try:
-            return self.workloads.get(order=idx)
-        except (WorkloadTemplate.DoesNotExist, Workload.DoesNotExist):
-            raise KeyError('Index out of range.')
-
-    def _create_proxy(self, workload):
-        raise NotImplementedError
+    def swap_workloads(self, idx1, idx2):
+        workload = self.workloads.get(order=idx1)
+        self.workloads.filter(order=idx2).update(order=idx1)
+        workload.order = idx2
+        workload.save()
 
 
 class ExerciseTemplate(AbstractExercise):
@@ -53,9 +57,6 @@ class ExerciseTemplate(AbstractExercise):
 
     def create_exercise(self):
         return Exercise.from_template(self)
-
-    def _create_proxy(self, workload):
-        return WorkloadTemplateProxy(workload)
 
 
 class Exercise(AbstractExercise):
@@ -69,7 +70,4 @@ class Exercise(AbstractExercise):
 
     @property
     def is_complete(self):
-        return all([workload.is_complete for workload in self.workloads.all()])
-
-    def _create_proxy(self, workload):
-        return WorkloadProxy(workload)
+        return all(workload.is_complete for workload in self.workloads.all())

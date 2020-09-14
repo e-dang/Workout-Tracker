@@ -1,7 +1,7 @@
 import pytest
 import mock
 
-from exercises.models.workloads import AbstractWorkload, WorkloadTemplate, Workload, KILOGRAMS, POUNDS
+from exercises.models.workloads import AbstractWorkload, KILOGRAMS, POUNDS
 from exercises.models.sets import AbstractSet, Set, SetTemplate
 
 
