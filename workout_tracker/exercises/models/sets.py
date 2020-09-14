@@ -56,7 +56,7 @@ class Set(AbstractSet):
 
     @classmethod
     def from_template(cls, template, workload):
-        return Set.objects.create(order=template.order, units=template.units, weight=template.weight,
+        return cls.objects.create(order=template.order, units=template.units, weight=template.weight,
                                   reps=template.reps, workload=workload, completed_reps=0)
 
     @property
