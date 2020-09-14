@@ -2,6 +2,7 @@ from django.db import models
 
 from .sets import Set, SetTemplate
 from .units import KILOGRAMS, POUNDS, UNITS, UnitsModelMixin
+from ..managers import WorkloadTemplateRelatedManager, WorkloadRelatedManager
 
 
 class AbstractWorkload(UnitsModelMixin):
@@ -54,10 +55,10 @@ class AbstractWorkload(UnitsModelMixin):
         del self[idx]
 
     def swap_sets(self, idx1, idx2):
-        s1 = self.sets.get(order=idx1)
+        s = self.sets.get(order=idx1)
         self.sets.filter(order=idx2).update(order=idx1)
-        s1.order = idx2
-        s1.save()
+        s.order = idx2
+        s.save()
 
     def _change_units(self, units):
         assert units in UNITS, f'The units must either be `{KILOGRAMS}` or `{POUNDS}` - was given `{units}`'
@@ -78,8 +79,11 @@ class WorkloadTemplate(AbstractWorkload):
     exercise_template = models.ForeignKey('exercises.ExerciseTemplate',
                                           related_name='workloads', on_delete=models.CASCADE)
 
+    workload_templates = WorkloadTemplateRelatedManager()
+    objects = models.Manager()
+
     class Meta:
-        ordering = ['exercise_template']
+        ordering = ['exercise_template', 'order']
 
     def create_workload(self, exercise):
         return Workload.from_template(self, exercise)
@@ -92,8 +96,11 @@ class Workload(AbstractWorkload):
     movement = models.ForeignKey('movements.Movement', related_name='workloads', on_delete=models.SET_NULL, null=True)
     exercise = models.ForeignKey('exercises.Exercise', related_name='workloads', on_delete=models.CASCADE)
 
+    workloads = WorkloadRelatedManager()
+    objects = models.Manager()
+
     class Meta:
-        ordering = ['exercise']
+        ordering = ['exercise', 'order']
 
     @classmethod
     def from_template(cls, template, exercise):
