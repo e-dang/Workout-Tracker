@@ -13,7 +13,7 @@ class JsonFactoryMixin:
 
     @classmethod
     def json_batch(cls, num, **kwargs):
-        return [factory.build(dict, FACTORY_CLASS=cls, **kwargs) for _ in range(num)]
+        return factory.build_batch(dict, num, FACTORY_CLASS=cls, **kwargs)
 
 
 class UserFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
