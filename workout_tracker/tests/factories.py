@@ -1,14 +1,22 @@
-import pytest
-
 import factory
 from django.db.models.signals import post_save, pre_delete
-from users.models import User
-from muscles.models import MuscleSubportion, Muscle, MuscleGrouping
+
+from exercises.models import UNITS
 
 TEST_PASSWORD = 'strong-test-pass123'
 
 
-class UserFactory(factory.django.DjangoModelFactory):
+class JsonFactoryMixin:
+    @classmethod
+    def json(cls, **kwargs):
+        return factory.build(dict, FACTORY_CLASS=cls, **kwargs)
+
+    @classmethod
+    def json_batch(cls, num, **kwargs):
+        return factory.build_batch(dict, num, FACTORY_CLASS=cls, **kwargs)
+
+
+class UserFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
 
     username = factory.Sequence(lambda x: f'username{x}')
     email = factory.Faker('email')
@@ -49,10 +57,28 @@ class UserFactory(factory.django.DjangoModelFactory):
         manager = cls._get_manager(model_class)
         return manager.create_user(*args, **kwargs)
 
+    @factory.post_generation
+    def equipment(self, create, counts, **kwargs):
+        if not create:
+            return
+
+        if counts:
+            for _ in range(counts):
+                self.equipments.add(EquipmentFactory(), **kwargs)
+
+    @factory.post_generation
+    def movements(self, create, counts, **kwargs):
+        if not create:
+            return
+
+        if counts:
+            for _ in range(counts):
+                self.movements.add(MovementFactory(**kwargs))
+
 
 @factory.django.mute_signals(post_save)
 @factory.django.mute_signals(pre_delete)
-class MuscleGroupingFactory(factory.django.DjangoModelFactory):
+class MuscleGroupingFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
     name = factory.Sequence(lambda x: f'back{x}')
     snames = factory.Sequence(lambda x: [f'Back{x}'])
 
@@ -66,7 +92,7 @@ class MuscleGroupingFactory(factory.django.DjangoModelFactory):
 
         if counts:
             for _ in range(counts):
-                self.muscles.add(MuscleFactory(subportions=1))
+                self.muscles.add(MuscleFactory(subportions=1, **kwargs))
 
 
 @factory.django.mute_signals(post_save)
@@ -93,12 +119,12 @@ class MuscleFactory(factory.django.DjangoModelFactory):
 
         if counts:
             for _ in range(counts):
-                self.subportions.add(MuscleSubportionFactory())
+                self.subportions.add(MuscleSubportionFactory(**kwargs))
 
 
 @factory.django.mute_signals(post_save)
 @factory.django.mute_signals(pre_delete)
-class MuscleSubportionFactory(factory.django.DjangoModelFactory):
+class MuscleSubportionFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
 
     name = factory.Sequence(lambda x: f'upper traps{x}')
     snames = factory.Sequence(lambda x: [f'Upper traps{x}', f'uppertraps{x}'])
@@ -115,50 +141,126 @@ class MuscleSubportionFactory(factory.django.DjangoModelFactory):
         return subportion
 
 
-@pytest.mark.django_db
-def test_user_factory(user_factory):
-    user = user_factory()
+class EquipmentFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
+    owner = factory.SubFactory(UserFactory)
+    name = factory.Sequence(lambda x: f'barbell{x}')
+    snames = factory.Sequence(lambda x: [f'Barbell{x}', f'bar bell{x}'])
 
-    assert isinstance(user, User)
-
-
-@pytest.mark.django_db
-def test_muscle_subportion_factory(muscle_subportion_factory):
-    grouping = muscle_subportion_factory()
-
-    assert isinstance(grouping, MuscleSubportion)
-    assert MuscleSubportion.objects.all().count() == 1
-    assert Muscle.objects.all().count() == 1
-    assert MuscleGrouping.objects.all().count() == 1
+    class Meta:
+        model = 'equipment.Equipment'
 
 
-@pytest.mark.parametrize('muscle_factory, num_subportions, expected_grouping, expected_muscle, expected_subportion', [
-    (None, 0, 1, 1, 0),
-    (None, 1, 2, 2, 1),
-    (None, 2, 3, 3, 2)
-], indirect=['muscle_factory'])
-@pytest.mark.django_db
-def test_muscle_factory(muscle_factory, num_subportions, expected_grouping, expected_muscle, expected_subportion):
-    muscle = muscle_factory(subportions=num_subportions)
+class MovementFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
+    owner = factory.SubFactory(UserFactory)
+    name = factory.Sequence(lambda x: f'bench press{x}')
+    snames = factory.Sequence(lambda x: [f'benchpress{x}', f'Benchpress{x}'])
+    equipment = factory.SubFactory(EquipmentFactory)
+    description = factory.Faker('text')
 
-    assert isinstance(muscle, Muscle)
-    assert muscle.subportions.all().count() == num_subportions
-    assert Muscle.objects.all().count() == expected_muscle
-    assert MuscleGrouping.objects.all().count() == expected_grouping
-    assert MuscleSubportion.objects.all().count() == expected_subportion
+    class Meta:
+        model = 'movements.Movement'
+
+    @factory.post_generation
+    def muscles(self, create, counts, **kwargs):
+        if not create:
+            return
+
+        if counts:
+            for _ in range(counts):
+                self.muscles.add(MuscleGroupingFactory(**kwargs))
 
 
-@pytest.mark.parametrize('muscle_grouping_factory, num_muscles, expected_grouping, expected_muscle, expected_subportion', [
-    (None, 0, 1, 0, 0),
-    (None, 1, 3, 2, 1),
-    (None, 2, 5, 4, 2)
-], indirect=['muscle_grouping_factory'])
-@pytest.mark.django_db
-def test_muscle_grouping_factory(muscle_grouping_factory, num_muscles, expected_grouping, expected_muscle, expected_subportion):
-    grouping = muscle_grouping_factory(muscles=num_muscles)
+class ExerciseTemplateFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
+    owner = factory.SubFactory(UserFactory)
+    name = factory.Sequence(lambda x: f'bench press{x}')
+    snames = factory.Sequence(lambda x: [f'benchpress{x}', f'Benchpress{x}'])
 
-    assert isinstance(grouping, MuscleGrouping)
-    assert grouping.muscles.all().count() == num_muscles
-    assert MuscleGrouping.objects.all().count() == expected_grouping
-    assert Muscle.objects.all().count() == expected_muscle
-    assert MuscleSubportion.objects.all().count() == expected_subportion
+    class Meta:
+        model = 'exercises.ExerciseTemplate'
+
+    @factory.post_generation
+    def workloads(self, create, count, **kwargs):
+        if not create:
+            return
+
+        if count:
+            for _ in range(count):
+                WorkloadTemplateFactory(exercise_template=self, movement=MovementFactory(), **kwargs)
+
+
+class ExerciseFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
+    owner = factory.SubFactory(UserFactory)
+    name = factory.Sequence(lambda x: f'bench press{x}')
+    snames = factory.Sequence(lambda x: [f'benchpress{x}', f'Benchpress{x}'])
+
+    class Meta:
+        model = 'exercises.Exercise'
+
+    @factory.post_generation
+    def workloads(self, create, count, **kwargs):
+        if not create:
+            return
+
+        if count:
+            for _ in range(count):
+                WorkloadFactory(exercise=self, movement=MovementFactory(), **kwargs)
+
+
+class WorkloadTemplateFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
+    movement = factory.SubFactory(MovementFactory)
+    exercise_template = factory.SubFactory(ExerciseTemplateFactory)
+    units = factory.Iterator(UNITS)
+    order = factory.Sequence(lambda x: x)
+
+    class Meta:
+        model = 'exercises.WorkloadTemplate'
+
+    @factory.post_generation
+    def sets(self, create, count, **kwargs):
+        if not create:
+            return
+
+        if count:
+            for _ in range(count):
+                SetTemplateFactory.create(workload_template=self, **kwargs)
+
+
+class WorkloadFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
+    movement = factory.SubFactory(MovementFactory)
+    exercise = factory.SubFactory(ExerciseFactory)
+    units = factory.Iterator(UNITS)
+    order = factory.Sequence(lambda x: x)
+
+    class Meta:
+        model = 'exercises.Workload'
+
+    @factory.post_generation
+    def sets(self, create, count, **kwargs):
+        if not create:
+            return
+
+        if count:
+            for _ in range(count):
+                SetFactory.create(workload=self, **kwargs)
+
+
+class AbstractSetFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
+    reps = factory.Faker('pyint', min_value=0, max_value=50)
+    weight = factory.Faker('pyfloat', min_value=0, max_value=1000)
+    order = factory.Sequence(lambda x: x)
+
+
+class SetTemplateFactory(AbstractSetFactory, JsonFactoryMixin):
+    workload_template = factory.SubFactory(WorkloadTemplateFactory)
+    units = factory.LazyAttribute(lambda o: o.workload_template.units)
+
+    class Meta:
+        model = 'exercises.SetTemplate'
+
+
+class SetFactory(AbstractSetFactory, JsonFactoryMixin):
+    workload = factory.SubFactory(WorkloadFactory)
+    units = factory.LazyAttribute(lambda o: o.workload.units)
+
+    class Meta:
+        model = 'exercises.Set'

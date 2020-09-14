@@ -1,5 +1,4 @@
-from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import ListCreateAPIView
@@ -43,5 +42,4 @@ class UserMovementListCreateView(ListCreateAPIView):
         return Movement.objects.filter(owner=self.kwargs['pk'])
 
     def perform_create(self, serializer):
-        owner_model = ContentType.objects.get(model=settings.AUTH_USER_MODEL).model_class()
-        serializer.save(owner=owner_model.objects.get(self.kwargs['pk']))
+        serializer.save(owner=get_user_model().objects.get(pk=self.kwargs['pk']))

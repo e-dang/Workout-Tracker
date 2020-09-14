@@ -32,7 +32,7 @@ class MultiAliasResource(models.Model):
 
 
 class OwnedMultiAliasResource(MultiAliasResource):
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='%(class)s',
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='%(class)ss',
                               related_query_name='%(class)s', on_delete=models.CASCADE)
 
     class Meta:
