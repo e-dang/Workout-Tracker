@@ -1,7 +1,6 @@
 import pytest
 import mock
 
-from tests.factories import SetFactory
 from exercises.models import Workload, WorkloadTemplate, KILOGRAMS
 from exercises.models.exercises import AbstractExercise
 
