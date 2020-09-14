@@ -1,6 +1,8 @@
 from django.db import models
-from .units import UnitsModelMixin, UNITS, KILOGRAMS, POUNDS
+
 from exercises import utils
+
+from .units import KILOGRAMS, POUNDS, UNITS, UnitsModelMixin
 
 
 class AbstractSet(UnitsModelMixin):
@@ -11,7 +13,13 @@ class AbstractSet(UnitsModelMixin):
     class Meta:
         abstract = True
 
-    def change_units(self, units):
+    def update(self, reps=None, weight=None, units=None):
+        self._change_units(units or self.units)
+        self.reps = reps or self.reps
+        self.weight = weight or self.weight
+        self.save()
+
+    def _change_units(self, units):
         assert units in UNITS, f'The units must either be `{KILOGRAMS}` or `{POUNDS}` - was given `{units}`'
 
         if units != self.units:
@@ -21,7 +29,6 @@ class AbstractSet(UnitsModelMixin):
                 self.weight = utils.convert_kg_to_lb(self.weight)
 
             self.units = units
-            self.save()
 
 
 class SetTemplate(AbstractSet):
@@ -50,81 +57,8 @@ class Set(AbstractSet):
     @classmethod
     def from_template(cls, template, workload):
         return Set.objects.create(order=template.order, units=template.units, weight=template.weight,
-                                  reps=template.reps, workload=workload, completed_reps=0, is_complete=False)
+                                  reps=template.reps, workload=workload, completed_reps=0)
 
     @property
     def is_complete(self):
         return self.completed_reps >= self.reps
-
-
-class SetTemplateProxy:
-    def __init__(self, workload, idx):
-        self.__workload = workload
-        self.__idx = idx
-        self.__set = None
-
-    def __del__(self):
-        self.save()
-
-    @property
-    def reps(self):
-        self._fill_cache()
-        return self.__set.reps
-
-    @property
-    def weight(self):
-        self._fill_cache()
-        return self.__set.weight
-
-    @property
-    def order(self):
-        self._fill_cache()
-        return self.__set.order
-
-    @reps.setter
-    def reps(self, val):
-        if self._is_cached():
-            self.__set.reps = val
-        else:
-            self.__workload.sets.get(order=self.__idx).update(reps=val)
-
-    @weight.setter
-    def weight(self, val):
-        if self._is_cached():
-            self.__set.weight = val
-        else:
-            self.__workload.sets.get(order=self.__idx).update(weight=val)
-
-    def save(self):
-        if self._is_cached():
-            assert self.__set.units == self.__workload.units
-            self.__set.save()
-
-    def _is_cached(self):
-        if self.__set is None:
-            return False
-        return True
-
-    def _fill_cache(self):
-        if not self._is_cached():
-            self.__set = self.__workload.sets.get(order=self.__idx)
-            assert self.__set.units == self.__workload.units
-
-
-class SetProxy(SetTemplateProxy):
-    @property
-    def completed_reps(self):
-        self._fill_cache()
-        return self.__set.reps()
-
-    @completed_reps.setter
-    def completed_reps(self, val):
-        if self._is_cached:
-            self.__set.completed_reps = val
-        else:
-            self.__workload.sets.get(order=self.__idx).update(completed_reps=val)
-
-    @property
-    def is_complete(self):
-        self._fill_cache()
-        return self.__set.is_complete
