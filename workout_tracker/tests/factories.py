@@ -6,7 +6,17 @@ from exercises.models import UNITS
 TEST_PASSWORD = 'strong-test-pass123'
 
 
-class UserFactory(factory.django.DjangoModelFactory):
+class JsonFactoryMixin:
+    @classmethod
+    def json(cls, **kwargs):
+        return factory.build(dict, FACTORY_CLASS=cls, **kwargs)
+
+    @classmethod
+    def json_batch(cls, num, **kwargs):
+        return [factory.build(dict, FACTORY_CLASS=cls, **kwargs) for _ in range(num)]
+
+
+class UserFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
 
     username = factory.Sequence(lambda x: f'username{x}')
     email = factory.Faker('email')
@@ -68,7 +78,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
 @factory.django.mute_signals(post_save)
 @factory.django.mute_signals(pre_delete)
-class MuscleGroupingFactory(factory.django.DjangoModelFactory):
+class MuscleGroupingFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
     name = factory.Sequence(lambda x: f'back{x}')
     snames = factory.Sequence(lambda x: [f'Back{x}'])
 
@@ -114,7 +124,7 @@ class MuscleFactory(factory.django.DjangoModelFactory):
 
 @factory.django.mute_signals(post_save)
 @factory.django.mute_signals(pre_delete)
-class MuscleSubportionFactory(factory.django.DjangoModelFactory):
+class MuscleSubportionFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
 
     name = factory.Sequence(lambda x: f'upper traps{x}')
     snames = factory.Sequence(lambda x: [f'Upper traps{x}', f'uppertraps{x}'])
@@ -131,7 +141,7 @@ class MuscleSubportionFactory(factory.django.DjangoModelFactory):
         return subportion
 
 
-class EquipmentFactory(factory.django.DjangoModelFactory):
+class EquipmentFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
     owner = factory.SubFactory(UserFactory)
     name = factory.Sequence(lambda x: f'barbell{x}')
     snames = factory.Sequence(lambda x: [f'Barbell{x}', f'bar bell{x}'])
@@ -140,7 +150,7 @@ class EquipmentFactory(factory.django.DjangoModelFactory):
         model = 'equipment.Equipment'
 
 
-class MovementFactory(factory.django.DjangoModelFactory):
+class MovementFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
     owner = factory.SubFactory(UserFactory)
     name = factory.Sequence(lambda x: f'bench press{x}')
     snames = factory.Sequence(lambda x: [f'benchpress{x}', f'Benchpress{x}'])
@@ -160,7 +170,7 @@ class MovementFactory(factory.django.DjangoModelFactory):
                 self.muscles.add(MuscleGroupingFactory(**kwargs))
 
 
-class ExerciseTemplateFactory(factory.django.DjangoModelFactory):
+class ExerciseTemplateFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
     owner = factory.SubFactory(UserFactory)
     name = factory.Sequence(lambda x: f'bench press{x}')
     snames = factory.Sequence(lambda x: [f'benchpress{x}', f'Benchpress{x}'])
@@ -178,7 +188,7 @@ class ExerciseTemplateFactory(factory.django.DjangoModelFactory):
                 WorkloadTemplateFactory(exercise_template=self, movement=MovementFactory(), **kwargs)
 
 
-class ExerciseFactory(factory.django.DjangoModelFactory):
+class ExerciseFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
     owner = factory.SubFactory(UserFactory)
     name = factory.Sequence(lambda x: f'bench press{x}')
     snames = factory.Sequence(lambda x: [f'benchpress{x}', f'Benchpress{x}'])
@@ -196,7 +206,7 @@ class ExerciseFactory(factory.django.DjangoModelFactory):
                 WorkloadFactory(exercise=self, movement=MovementFactory(), **kwargs)
 
 
-class WorkloadTemplateFactory(factory.django.DjangoModelFactory):
+class WorkloadTemplateFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
     movement = factory.SubFactory(MovementFactory)
     exercise_template = factory.SubFactory(ExerciseTemplateFactory)
     units = factory.Iterator(UNITS)
@@ -215,7 +225,7 @@ class WorkloadTemplateFactory(factory.django.DjangoModelFactory):
                 SetTemplateFactory.create(workload_template=self, **kwargs)
 
 
-class WorkloadFactory(factory.django.DjangoModelFactory):
+class WorkloadFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
     movement = factory.SubFactory(MovementFactory)
     exercise = factory.SubFactory(ExerciseFactory)
     units = factory.Iterator(UNITS)
@@ -234,13 +244,13 @@ class WorkloadFactory(factory.django.DjangoModelFactory):
                 SetFactory.create(workload=self, **kwargs)
 
 
-class AbstractSetFactory(factory.django.DjangoModelFactory):
+class AbstractSetFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
     reps = factory.Faker('pyint', min_value=0, max_value=50)
     weight = factory.Faker('pyfloat', min_value=0, max_value=1000)
     order = factory.Sequence(lambda x: x)
 
 
-class SetTemplateFactory(AbstractSetFactory):
+class SetTemplateFactory(AbstractSetFactory, JsonFactoryMixin):
     workload_template = factory.SubFactory(WorkloadTemplateFactory)
     units = factory.LazyAttribute(lambda o: o.workload_template.units)
 
@@ -248,7 +258,7 @@ class SetTemplateFactory(AbstractSetFactory):
         model = 'exercises.SetTemplate'
 
 
-class SetFactory(AbstractSetFactory):
+class SetFactory(AbstractSetFactory, JsonFactoryMixin):
     workload = factory.SubFactory(WorkloadFactory)
     units = factory.LazyAttribute(lambda o: o.workload.units)
 
