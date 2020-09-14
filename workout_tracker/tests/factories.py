@@ -54,7 +54,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
         if counts:
             for _ in range(counts):
-                self.equipments.add(EquipmentFactory())
+                self.equipments.add(EquipmentFactory(), **kwargs)
 
     @factory.post_generation
     def movements(self, create, counts, **kwargs):
@@ -63,7 +63,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
         if counts:
             for _ in range(counts):
-                self.movements.add(MovementFactory())
+                self.movements.add(MovementFactory(**kwargs))
 
 
 @factory.django.mute_signals(post_save)
@@ -82,7 +82,7 @@ class MuscleGroupingFactory(factory.django.DjangoModelFactory):
 
         if counts:
             for _ in range(counts):
-                self.muscles.add(MuscleFactory(subportions=1))
+                self.muscles.add(MuscleFactory(subportions=1, **kwargs))
 
 
 @factory.django.mute_signals(post_save)
@@ -109,7 +109,7 @@ class MuscleFactory(factory.django.DjangoModelFactory):
 
         if counts:
             for _ in range(counts):
-                self.subportions.add(MuscleSubportionFactory())
+                self.subportions.add(MuscleSubportionFactory(**kwargs))
 
 
 @factory.django.mute_signals(post_save)
@@ -157,7 +157,7 @@ class MovementFactory(factory.django.DjangoModelFactory):
 
         if counts:
             for _ in range(counts):
-                self.muscles.add(MuscleGroupingFactory())
+                self.muscles.add(MuscleGroupingFactory(**kwargs))
 
 
 class ExerciseTemplateFactory(factory.django.DjangoModelFactory):
@@ -200,6 +200,7 @@ class WorkloadTemplateFactory(factory.django.DjangoModelFactory):
     movement = factory.SubFactory(MovementFactory)
     exercise_template = factory.SubFactory(ExerciseTemplateFactory)
     units = factory.Iterator(UNITS)
+    order = factory.Sequence(lambda x: x)
 
     class Meta:
         model = 'exercises.WorkloadTemplate'
@@ -211,13 +212,14 @@ class WorkloadTemplateFactory(factory.django.DjangoModelFactory):
 
         if count:
             for _ in range(count):
-                SetTemplateFactory.create(workload_template=self)
+                SetTemplateFactory.create(workload_template=self, **kwargs)
 
 
 class WorkloadFactory(factory.django.DjangoModelFactory):
     movement = factory.SubFactory(MovementFactory)
     exercise = factory.SubFactory(ExerciseFactory)
     units = factory.Iterator(UNITS)
+    order = factory.Sequence(lambda x: x)
 
     class Meta:
         model = 'exercises.Workload'
@@ -229,12 +231,13 @@ class WorkloadFactory(factory.django.DjangoModelFactory):
 
         if count:
             for _ in range(count):
-                SetFactory.create(workload=self)
+                SetFactory.create(workload=self, **kwargs)
 
 
 class AbstractSetFactory(factory.django.DjangoModelFactory):
     reps = factory.Faker('pyint', min_value=0, max_value=50)
     weight = factory.Faker('pyfloat', min_value=0, max_value=1000)
+    order = factory.Sequence(lambda x: x)
 
 
 class SetTemplateFactory(AbstractSetFactory):
