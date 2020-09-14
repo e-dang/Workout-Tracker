@@ -21,6 +21,7 @@ class AbstractSet(UnitsModelMixin):
                 self.weight = utils.convert_kg_to_lb(self.weight)
 
             self.units = units
+            self.save()
 
 
 class SetTemplate(AbstractSet):
@@ -95,8 +96,8 @@ class SetTemplateProxy:
             self.__workload.sets.get(order=self.__idx).update(weight=val)
 
     def save(self):
-        assert self.__set.units == self.__workload.units
         if self._is_cached():
+            assert self.__set.units == self.__workload.units
             self.__set.save()
 
     def _is_cached(self):
@@ -106,7 +107,7 @@ class SetTemplateProxy:
 
     def _fill_cache(self):
         if not self._is_cached():
-            self.__set = self.__workload.get(order=self.__idx)
+            self.__set = self.__workload.sets.get(order=self.__idx)
             assert self.__set.units == self.__workload.units
 
 
