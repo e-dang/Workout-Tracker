@@ -154,7 +154,6 @@ class MovementFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
     owner = factory.SubFactory(UserFactory)
     name = factory.Sequence(lambda x: f'bench press{x}')
     snames = factory.Sequence(lambda x: [f'benchpress{x}', f'Benchpress{x}'])
-    equipment = factory.SubFactory(EquipmentFactory)
     description = factory.Faker('text')
 
     class Meta:
@@ -168,6 +167,15 @@ class MovementFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):
         if counts:
             for _ in range(counts):
                 self.muscles.add(MuscleGroupingFactory(**kwargs))
+
+    @factory.post_generation
+    def equipment(self, create, counts, **kwargs):
+        if not create:
+            return
+
+        if counts:
+            for _ in range(counts):
+                self.equipment.add(EquipmentFactory(**kwargs))
 
 
 class ExerciseTemplateFactory(factory.django.DjangoModelFactory, JsonFactoryMixin):

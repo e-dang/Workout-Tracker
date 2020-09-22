@@ -3,6 +3,6 @@ from core.models import OwnedMultiAliasResource
 
 
 class Movement(OwnedMultiAliasResource):
-    equipment = models.ForeignKey('equipment.Equipment', related_name='movements', on_delete=models.CASCADE)
+    equipment = models.ManyToManyField('equipment.Equipment', related_name='movements')
     muscles = models.ManyToManyField('muscles.MuscleGrouping', related_name='movements')
     description = models.TextField()
