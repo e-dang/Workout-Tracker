@@ -8,7 +8,6 @@ class MultiAliasedResourceSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MultiAliasResource
         fields = ['url', 'id', 'name', 'snames', 'created']
-        read_only_fields = ['url', 'id']
         abstract = True
 
 
