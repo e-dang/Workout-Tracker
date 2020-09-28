@@ -76,23 +76,37 @@ def test_user_factory_with_equipment(user_factory):
         assert equipment.owner == user
 
 
-@pytest.mark.parametrize('movement_factory, num_muscles', [
-    (None, 0),
-    (None, 1)
+@pytest.mark.parametrize('num_equipment', [
+    0,
+    1,
+    2
+],
+    ids=['zero_equipment', 'one_equipment', 'two_equipment'])
+@pytest.mark.parametrize('num_muscles', [
+    0,
+    1,
+    2
+],
+    ids=['zero_muscles', 'one_muscles', 'two_muscles'])
+@pytest.mark.parametrize('movement_factory', [
+    None
 ],
     indirect=['movement_factory'],
-    ids=['zero_muscles', 'one_muscle'])
+    ids=[''])
 @pytest.mark.django_db
-def test_movement_factory(movement_factory, num_muscles):
-    movement = movement_factory(muscles=num_muscles)
+def test_movement_factory(movement_factory, num_muscles, num_equipment):
+    movement = movement_factory(muscles=num_muscles, equipment=num_equipment)
 
-    count = movement.muscles.all().count()
+    muscles_count = movement.muscles.all().count()
+    equipment_count = movement.equipment.all().count()
     assert isinstance(movement, Movement)
     assert isinstance(movement.owner, User)
-    assert isinstance(movement.equipment, Equipment)
-    assert count == num_muscles
-    if count != 0:
+    assert muscles_count == num_muscles
+    assert equipment_count == num_equipment
+    if muscles_count != 0:
         assert isinstance(movement.muscles.last(), MuscleGrouping)
+    if equipment_count != 0:
+        assert isinstance(movement.equipment.last(), Equipment)
 
 
 @pytest.mark.django_db
