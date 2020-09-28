@@ -11,7 +11,7 @@ class MultiAliasResource(models.Model):
     the aliases field holds special meaning, as this is the name that will be used to represent the resource.
     """
     name = models.CharField(max_length=100)
-    snames = ArrayField(models.CharField(max_length=100))
+    snames = ArrayField(models.CharField(max_length=100), default=list)
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
