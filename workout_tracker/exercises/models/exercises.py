@@ -7,6 +7,8 @@ from .workloads import Workload, WorkloadTemplate
 
 
 class AbstractExercise(OwnedMultiAliasResource):
+    order = models.PositiveSmallIntegerField()
+
     class Meta:
         abstract = True
 
@@ -52,6 +54,8 @@ class AbstractExercise(OwnedMultiAliasResource):
 
 
 class ExerciseTemplate(AbstractExercise):
+    workout_templates = models.ForeignKey('workouts.WorkoutTemplate',
+                                          related_name='exercises', on_delete=models.CASCADE)
 
     objects = ExerciseTemplateManager()
 
@@ -60,6 +64,7 @@ class ExerciseTemplate(AbstractExercise):
 
 
 class Exercise(AbstractExercise):
+    workouts = models.ForeignKey('workouts.Workout', related_name='exercises', on_delete=models.CASCADE)
 
     @classmethod
     def from_template(cls, template):

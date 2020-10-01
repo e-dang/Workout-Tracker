@@ -30,13 +30,19 @@ class ExerciseTemplateSerializer(OwnedMultiAliasResourceSerializer):
 
     class Meta:
         model = ExerciseTemplate
-        fields = extend_fields(OwnedMultiAliasResourceSerializer, ['workloads'])
+        fields = extend_fields(OwnedMultiAliasResourceSerializer, ['order', 'workout_templates', 'workloads'])
+        extra_kwargs = {
+            'url': {'view_name': 'exercise-detail', 'lookup_field': 'pk'},
+            'workout_templates': {'view_name': 'workout-template-detail', 'lookup_field': 'pk'}
+        }
 
     def create(self, validated_data):
         return ExerciseTemplate.objects.create(
             owner=validated_data['owner'],
             name=validated_data['name'],
             snames=validated_data['snames'],
+            order=validated_data['order'],
+            workout_templates=validated_data['workout_templates'],
             workloads=validated_data.get('workloads', [])
         )
 
