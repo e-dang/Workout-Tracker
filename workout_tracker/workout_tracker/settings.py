@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'muscles',
     'equipment',
     'movements',
-    'exercises'
+    'exercises',
+    'workouts'
 ]
 
 MIDDLEWARE = [

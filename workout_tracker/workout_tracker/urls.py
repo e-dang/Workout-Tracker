@@ -25,7 +25,8 @@ extra_patterns = [
     path('muscles/', include('muscles.urls')),
     path('equipment/', include('equipment.urls')),
     path('movements/', include('movements.urls')),
-    path('exercises/', include('exercises.urls'))
+    path('exercises/', include('exercises.urls')),
+    path('workouts/', include('workouts.urls'))
 ]
 
 urlpatterns = [
