@@ -1,36 +1,43 @@
 from django.db import models
 
 
+class ExerciseTemplateRelatedManager(models.Manager):
+    def create(self, movement, units, order, sets=None):
+        exercise_template = self.model(owner=self.instance.owner, name=movement.name,
+                                       snames=movement.snames, order=order)
+        exercise_template.save()
+        exercise_template.workloads.create(movement, units, 0, sets=sets)
+        return exercise_template
+
+
 class ExerciseTemplateManager(models.Manager):
 
-    def create(self, owner, name, snames, workloads=None):
+    def create(self, owner, name, snames, order, workout_templates, workloads=None):
         exercise_template = self.model(
             owner=owner,
             name=name,
-            snames=snames
+            snames=snames,
+            order=order,
+            workout_templates=workout_templates
         )
         exercise_template.save()
-        if workloads is not None:
-            exercise_template.extend(workloads)
+        exercise_template.extend(workloads or [])
         return exercise_template
 
 
 class WorkloadTemplateRelatedManager(models.Manager):
     use_for_related_fields = True
 
-    def create(self, movement, units, order, sets=None):
-        return _create_workload_helper(self.model, movement, units, order, sets, exercise_template=self.instance)
+    def create(self, movement, units, order, sets=None, **kwargs):
+        workload = super().create(movement=movement, units=units, order=order, **kwargs)
+        workload.extend(sets or [])
+        return workload
 
 
 class WorkloadRelatedManager(models.Manager):
     use_for_related_fields = True
 
-    def create(self, movement, units, order, sets=None):
-        return _create_workload_helper(self.model, movement, units, order, sets, exercise=self.instance)
-
-
-def _create_workload_helper(model, movement, units, order, sets, **kwargs):
-    workload = model(movement=movement, units=units, order=order, **kwargs)
-    if sets is not None:
-        workload.extend(sets)
-    return workload
+    def create(self, movement, units, order, sets=None, **kwargs):
+        workload = super().create(movement=movement, units=units, order=order, **kwargs)
+        workload.extend(sets or [])
+        return workload
