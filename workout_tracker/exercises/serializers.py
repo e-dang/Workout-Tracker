@@ -2,7 +2,54 @@ from rest_framework import serializers
 
 from core.serializers import OwnedMultiAliasResourceSerializer, extend_fields
 
-from .models import ExerciseTemplate, SetTemplate, WorkloadTemplate
+from .models import ExerciseTemplate, SetTemplate, WorkloadTemplate, Set, Workload, Exercise
+from movements.serializers import MovementSerializer
+
+
+class SetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Set
+        fields = ['order', 'reps', 'completed_reps', 'weight']
+
+
+class WorkloadSerializer(serializers.ModelSerializer):
+    sets = SetSerializer(many=True)
+    movement = MovementSerializer()
+
+    class Meta:
+        model = Workload
+        fields = ['order', 'movement', 'sets', 'units']
+
+
+class ExerciseSerializer(serializers.ModelSerializer):
+    workloads = WorkloadSerializer(many=True)
+
+    class Meta:
+        model = Exercise
+        fields = ['name', 'order', 'workloads']
+
+    def update(self, instance, validated_data):
+        _update_exercise(instance, validated_data)
+
+
+def _update_set(instance, validated_data):
+    instance.completed_reps = validated_data.get('completed_reps')
+    instance.save()
+    return instance
+
+
+def _update_workload(instance, validated_data):
+    for set_data in validated_data.get('sets', []):
+        _update_set(instance[set_data['order']], set_data)
+    instance.save()
+    return instance
+
+
+def _update_exercise(instance, validated_data):
+    for workload_data in validated_data.get('workloads', []):
+        _update_workload(instance[workload_data['order']], workload_data)
+    instance.save()
+    return instance
 
 
 class SetTemplateSerializer(serializers.ModelSerializer):
