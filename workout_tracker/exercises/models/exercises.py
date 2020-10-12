@@ -59,16 +59,17 @@ class ExerciseTemplate(AbstractExercise):
 
     objects = ExerciseTemplateManager()
 
-    def create_exercise(self):
-        return Exercise.from_template(self)
+    def create_exercise(self, workout):
+        return Exercise.from_template(self, workout)
 
 
 class Exercise(AbstractExercise):
     workouts = models.ForeignKey('workouts.Workout', related_name='exercises', on_delete=models.CASCADE)
 
     @classmethod
-    def from_template(cls, template):
-        exercise = cls.objects.create(owner=template.owner, name=template.name, snames=template.snames)
+    def from_template(cls, template, workout):
+        exercise = cls.objects.create(owner=template.owner, name=template.name,
+                                      snames=template.snames, order=len(workout), workouts=workout)
         for workload_template in template.workloads.all():
             workload_template.create_workload(exercise)
         return exercise
