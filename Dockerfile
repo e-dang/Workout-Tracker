@@ -1,0 +1,75 @@
+# Mutli-stage build base layer
+FROM python:3.8.3 AS base
+
+
+# Development build layer. Taken from https://github.com/microsoft/vscode-dev-containers/blob/v0.122.1/containers/python-3/.devcontainer/base.Dockerfile
+FROM base AS dev
+
+# This Dockerfile adds a non-root user with sudo access. Use the "remoteUser"
+# property in devcontainer.json to use it. On Linux, the container user's GID/UIDs
+# will be updated to match your local UID/GID (when using the dockerFile property).
+# See https://aka.ms/vscode-remote/containers/non-root-user for details.
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+# Default set of utilities to install in a side virtual env
+ARG DEFAULT_UTILS="\
+    pylint \
+    autopep8 \
+    virtualenv \
+    mypy"
+ENV PIPX_HOME=/usr/local/py-utils
+ENV PIPX_BIN_DIR=${PIPX_HOME}/bin
+ENV PATH=${PATH}:${PIPX_BIN_DIR}
+
+# Options for common package install script
+ARG INSTALL_ZSH="true"
+ARG UPGRADE_PACKAGES="true"
+ARG COMMON_SCRIPT_SOURCE="https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.122.1/script-library/common-debian.sh"
+ARG COMMON_SCRIPT_SHA="da956c699ebef75d3d37d50569b5fbd75d6363e90b3f5d228807cff1f7fa211c"
+
+RUN apt-get update \
+    && export DEBIAN_FRONTEND=noninteractive \
+    #
+    # Verify git, common tools / libs installed, add/modify non-root user, optionally install zsh
+    && apt-get -y install --no-install-recommends curl ca-certificates 2>&1 \
+    && curl -sSL  ${COMMON_SCRIPT_SOURCE} -o /tmp/common-setup.sh \
+    && ([ "${COMMON_SCRIPT_SHA}" = "dev-mode" ] || (echo "${COMMON_SCRIPT_SHA} */tmp/common-setup.sh" | sha256sum -c -)) \
+    && /bin/bash /tmp/common-setup.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" \
+    && rm /tmp/common-setup.sh \
+    #
+    # Setup default python tools in a venv via pipx to avoid conflicts
+    && mkdir -p ${PIPX_BIN_DIR} \
+    && export PYTHONUSERBASE=/tmp/pip-tmp \
+    && pip3 install --disable-pip-version-check --no-warn-script-location --no-cache-dir --user pipx \
+    && /tmp/pip-tmp/bin/pipx install --pip-args=--no-cache-dir pipx \
+    && echo "${DEFAULT_UTILS}" | xargs -n 1 /tmp/pip-tmp/bin/pipx install --system-site-packages --pip-args=--no-cache-dir --pip-args=--force-reinstall \
+    && chown -R ${USER_UID}:${USER_GID} ${PIPX_HOME} \
+    && /tmp/pip-tmp/bin/pipx inject pylint pylint-django \
+    && rm -rf /tmp/pip-tmp \
+    #
+    # Tactically remove imagemagick due to https://security-tracker.debian.org/tracker/CVE-2019-10131
+    # Can leave in Dockerfile once upstream base image moves to > 7.0.7-28.
+    && apt-get purge -y imagemagick imagemagick-6-common \
+    #
+    # Clean up
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set user to non-root user with sudo access and add their bin dir to path
+USER $USERNAME
+ENV PATH=/home/${USERNAME}/.local/bin:${PATH}
+
+# Test build layer
+FROM base AS test
+WORKDIR /usr/src/app
+COPY . .
+ENV PATH=/home/${USERNAME}/.local/bin:${PATH}
+RUN apt-get update \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install -r requirements.txt
