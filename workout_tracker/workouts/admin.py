@@ -1,3 +1,15 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import WorkoutTemplate, Workout
+
+
+class WorkoutTemplateAdmin(admin.ModelAdmin):
+    pass
+
+
+class WorkoutAdmin(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(WorkoutTemplate, WorkoutTemplateAdmin)
+admin.site.register(Workout, WorkoutAdmin)
